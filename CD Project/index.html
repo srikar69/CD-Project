@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYNTAXIA — Automated Syntax & Semantic Processing System</title>
+    <meta name="description" content="Automated syntax and semantic processing system with interactive lexical analysis, grammar processing, AST visualizer, symbol table scope checking, TAC intermediate code generator, and virtual machine execution.">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <!-- Application Top Navigation Bar -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand-section">
+                <div class="brand-icon">⚡</div>
+                <div>
+                    <h1 class="brand-title">SYNTAXIA</h1>
+                    <div class="brand-subtitle">Automated Syntax & Semantic Processing System</div>
+                </div>
+            </div>
+
+            <!-- View Switcher -->
+            <div class="main-nav-tabs">
+                <button type="button" class="main-nav-btn active" data-view="compiler" id="btn-view-compiler">
+                    <span>⚙️</span> Full Compiler Studio
+                </button>
+                <button type="button" class="main-nav-btn" data-view="grammar" id="btn-view-grammar">
+                    <span>📐</span> CFG & Grammar Workbench
+                </button>
+            </div>
+
+            <!-- Header Quick Actions -->
+            <div class="header-actions">
+                <button type="button" class="btn-secondary" id="btn-show-theory">
+                    <span>📖</span> Theory & Guide
+                </button>
+                <button type="button" class="btn-secondary" id="btn-export-report">
+                    <span>📥</span> Export Report
+                </button>
+                <button type="button" class="btn-primary" id="btn-compile">
+                    <span>▶</span> Compile & Run
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- VIEW 1: Full Compiler Studio Pipeline -->
+    <main class="view-section active" id="view-compiler">
+        <div class="compiler-studio-grid">
+            
+            <!-- Left Pane: Source Code Editor -->
+            <section class="editor-card" aria-label="Source Code Editor">
+                <div class="card-header-bar">
+                    <div class="header-title-box">
+                        <span class="card-title">Source Code</span>
+                        <span class="status-pill success" id="pipeline-status-badge">Ready</span>
+                    </div>
+                    <div class="header-actions">
+                        <select class="select-preset" id="code-preset-select" aria-label="Load Preset Program">
+                            <option value="factorial">Preset: Factorial & Recursion</option>
+                            <option value="control_flow">Preset: While Loops & Logic</option>
+                            <option value="types_and_precedence">Preset: Types & Precedence</option>
+                            <option value="scoping_shadowing">Preset: Scopes & Shadowing</option>
+                            <option value="semantic_errors">Preset: Semantic Error Detection</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="editor-content-wrapper">
+                    <div class="line-numbers" id="editor-line-numbers" aria-hidden="true"></div>
+                    <textarea class="code-textarea" id="source-code-editor" spellcheck="false" placeholder="Enter high-level program code here..."></textarea>
+                </div>
+
+                <div class="editor-footer-bar">
+                    <span id="editor-stats">Lines: 1 | Characters: 0</span>
+                    <span class="muted">Press <strong>Compile & Run</strong> to re-process</span>
+                </div>
+            </section>
+
+            <!-- Right Pane: Multi-Phase Processing Pipeline -->
+            <section class="output-card" aria-label="Compiler Pipeline Output">
+                <!-- Phase Tabs -->
+                <nav class="pipeline-nav-bar" aria-label="Compiler Phases">
+                    <button type="button" class="pipeline-tab-btn active" data-panel="tokens" id="tab-tokens">
+                        <span>🔤</span> 1. Lexical (Tokens)
+                    </button>
+                    <button type="button" class="pipeline-tab-btn" data-panel="ast" id="tab-ast">
+                        <span>🌳</span> 2. Syntax (AST Tree)
+                    </button>
+                    <button type="button" class="pipeline-tab-btn" data-panel="semantics" id="tab-semantics">
+                        <span>🛡️</span> 3. Semantics & Scope
+                    </button>
+                    <button type="button" class="pipeline-tab-btn" data-panel="icg" id="tab-icg">
+                        <span>📝</span> 4. Intermediate (TAC)
+                    </button>
+                    <button type="button" class="pipeline-tab-btn" data-panel="vm" id="tab-vm">
+                        <span>💻</span> 5. VM Execution
+                    </button>
+                </nav>
+
+                <!-- Panel 1: Lexical Analysis -->
+                <div class="pipeline-panel active" id="panel-tokens">
+                    <div class="sub-toolbar">
+                        <div class="sub-toolbar-left">
+                            <span class="status-pill success" id="token-count-badge">0 Tokens</span>
+                            <span class="muted text-sm">Deterministic Finite Automata token stream</span>
+                        </div>
+                        <div class="sub-toolbar-right">
+                            <input type="text" class="search-input" id="token-search-input" placeholder="Filter tokens...">
+                        </div>
+                    </div>
+
+                    <!-- Mini Token Badges -->
+                    <div class="token-chips-preview" id="token-cards-container"></div>
+
+                    <!-- Full Token Table -->
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Lexeme</th>
+                                    <th>Token Class</th>
+                                    <th>Position</th>
+                                    <th>Matched Regex</th>
+                                </tr>
+                            </thead>
+                            <tbody id="token-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Panel 2: AST Visualizer -->
+                <div class="pipeline-panel" id="panel-ast">
+                    <div class="sub-toolbar">
+                        <div class="sub-toolbar-left">
+                            <span class="card-title">Hierarchical Abstract Syntax Tree</span>
+                            <span class="muted text-sm">Pan with drag • Zoom with wheel</span>
+                        </div>
+                        <div class="sub-toolbar-right">
+                            <button type="button" class="icon-btn" id="btn-zoom-in" title="Zoom In">+</button>
+                            <button type="button" class="icon-btn" id="btn-zoom-out" title="Zoom Out">-</button>
+                            <button type="button" class="btn-secondary" id="btn-reset-view">Reset View</button>
+                        </div>
+                    </div>
+
+                    <div class="ast-container">
+                        <div class="ast-canvas-wrapper">
+                            <svg class="ast-svg" id="ast-svg"></svg>
+                            <div class="ast-controls-overlay">
+                                <span class="muted text-xs">Node Types: 🔵 Program 🟣 Operator 🟢 Literal 🟡 Id 🔴 Control</span>
+                            </div>
+                        </div>
+
+                        <!-- Node Inspector Panel -->
+                        <div class="node-inspector-panel">
+                            <h4>Node Inspector</h4>
+                            <div id="node-info-panel">
+                                <p class="muted text-sm">Click on any node in the AST tree to view its semantic attributes, inferred type, and scope ID.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel 3: Semantic Analysis & Symbol Table -->
+                <div class="pipeline-panel" id="panel-semantics">
+                    <div class="sub-toolbar">
+                        <div class="sub-toolbar-left">
+                            <span class="card-title">Scope Hierarchy & Symbol Table</span>
+                        </div>
+                        <div class="sub-toolbar-right">
+                            <span class="status-pill warning" id="diagnostics-count-badge">0 Issues</span>
+                        </div>
+                    </div>
+
+                    <div class="semantics-grid">
+                        <div>
+                            <div class="table-responsive">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Identifier</th>
+                                            <th>Category</th>
+                                            <th>Type</th>
+                                            <th>Scope</th>
+                                            <th>Depth</th>
+                                            <th>Offset</th>
+                                            <th>Declared</th>
+                                            <th>Initialized</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="symbol-table-body"></tbody>
+                                </table>
+                            </div>
+
+                            <div style="margin-top: 1.25rem;">
+                                <h4 style="margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.88rem;">Lexical Scopes Hierarchy</h4>
+                                <div id="scope-hierarchy-tree"></div>
+                            </div>
+                        </div>
+
+                        <!-- Diagnostics Log -->
+                        <div>
+                            <h4 style="margin-bottom: 0.75rem; color: var(--text-secondary); font-size: 0.88rem;">Compiler Diagnostics (Errors / Warnings)</h4>
+                            <div class="diagnostics-container" id="diagnostics-list"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel 4: Intermediate Code Generation (ICG) -->
+                <div class="pipeline-panel" id="panel-icg">
+                    <div class="sub-toolbar">
+                        <div class="sub-toolbar-left">
+                            <span class="card-title">Three-Address Code (TAC), Quadruples & Triples</span>
+                        </div>
+                        <div class="sub-toolbar-right">
+                            <label style="font-size: 0.82rem; display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                                <input type="checkbox" id="chk-optimize-tac"> Apply Constant Folding Optimization
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="icg-grid">
+                        <div>
+                            <h4 style="margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.85rem;">Three-Address Code (TAC)</h4>
+                            <div class="code-box" id="tac-output">// Three-Address Code</div>
+                        </div>
+
+                        <div>
+                            <h4 style="margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.85rem;">Quadruple Representation (Op, Arg1, Arg2, Result)</h4>
+                            <div class="table-responsive" style="max-height: 320px;">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Op</th>
+                                            <th>Arg 1</th>
+                                            <th>Arg 2</th>
+                                            <th>Result</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="quadruples-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 style="margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.85rem;">Triples & Basic Blocks for Control Flow Graph (CFG)</h4>
+                        <div class="basic-blocks-wrapper" id="basic-blocks-container"></div>
+                    </div>
+                </div>
+
+                <!-- Panel 5: Virtual Machine & Terminal -->
+                <div class="pipeline-panel" id="panel-vm">
+                    <div class="sub-toolbar">
+                        <div class="sub-toolbar-left">
+                            <button type="button" class="btn-primary" id="btn-vm-run">Run</button>
+                            <button type="button" class="btn-secondary" id="btn-vm-step">Step 1 Instr</button>
+                            <button type="button" class="btn-secondary" id="btn-vm-pause">Pause</button>
+                            <button type="button" class="btn-secondary" id="btn-vm-reset">Reset</button>
+                            <span class="status-pill paused" id="vm-status-badge">STOPPED</span>
+                        </div>
+                        <div class="sub-toolbar-right">
+                            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 0.5rem;">
+                                Speed:
+                                <input type="range" id="vm-speed-slider" min="50" max="1000" step="50" value="250">
+                                <span id="vm-speed-val">250ms</span>
+                            </label>
+                            <button type="button" class="btn-secondary" id="btn-clear-stdout">Clear Console</button>
+                        </div>
+                    </div>
+
+                    <div class="vm-grid">
+                        <div>
+                            <h4 style="margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.85rem;">Virtual Machine Console (stdout)</h4>
+                            <div class="terminal-box" id="vm-stdout">
+                                <span class="stdout-prompt">$ ready</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 style="margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.85rem;">Environment & Variable Watch</h4>
+                            <div class="table-responsive">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Variable / Temp</th>
+                                            <th>Type</th>
+                                            <th>Current Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="vm-env-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+    </main>
+
+    <!-- VIEW 2: Context-Free Grammar (CFG) & Parsing Table Workbench -->
+    <main class="view-section" id="view-grammar">
+        <div class="grammar-workbench-grid">
+            <!-- Left: Grammar Productions Editor -->
+            <section class="editor-card">
+                <div class="card-header-bar">
+                    <span class="card-title">Context-Free Grammar (CFG)</span>
+                    <select class="select-preset" id="grammar-preset-select" aria-label="Load Preset Grammar">
+                        <option value="arithmetic_ll1">Preset: Arithmetic LL(1)</option>
+                        <option value="dangling_else">Preset: Dangling Else (Ambiguous)</option>
+                        <option value="assignment_stmt">Preset: Statement Sequence</option>
+                    </select>
+                </div>
+
+                <div style="padding: 1rem;">
+                    <textarea class="grammar-editor-box" id="grammar-editor" spellcheck="false" placeholder="Enter CFG productions (e.g. E -> T E'&#10;E' -> + T E' | ε)"></textarea>
+                    
+                    <button type="button" class="btn-primary" id="btn-analyze-grammar" style="margin-top: 0.75rem; width: 100%; justify-content: center;">
+                        Compute FIRST & FOLLOW Sets
+                    </button>
+
+                    <div class="grammar-conflicts-box" id="grammar-conflicts-alert" style="display: none;"></div>
+
+                    <!-- String Derivation Simulator -->
+                    <div class="derivation-simulator-box">
+                        <h4 style="font-size: 0.85rem; margin-bottom: 0.5rem; color: var(--text-primary);">Interactive LL(1) String Derivation</h4>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" class="search-input" id="input-derivation-string" style="flex: 1;" placeholder="Enter token sequence, e.g. id + id * num">
+                            <button type="button" class="btn-secondary" id="btn-simulate-parse">Parse</button>
+                        </div>
+                        <div id="parse-simulation-result"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right: FIRST/FOLLOW Sets & LL(1) Parse Table -->
+            <section class="output-card" style="padding: 1.25rem; overflow: auto;">
+                <div class="sub-toolbar">
+                    <div class="sub-toolbar-left">
+                        <span class="card-title">Grammar Analysis Sets</span>
+                        <span class="status-pill success" id="grammar-status-badge">Grammar is LL(1) Valid</span>
+                    </div>
+                </div>
+
+                <!-- FIRST & FOLLOW Table -->
+                <div class="table-responsive" style="margin-bottom: 1.25rem;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Non-Terminal (A)</th>
+                                <th>FIRST(A)</th>
+                                <th>FOLLOW(A)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="first-follow-table-body"></tbody>
+                    </table>
+                </div>
+
+                <!-- LL(1) Parsing Table M[A, a] -->
+                <div class="sub-toolbar">
+                    <span class="card-title">LL(1) Predictive Parsing Table M[A, a]</span>
+                </div>
+                <div class="table-responsive" id="parse-table-container"></div>
+
+                <!-- Step-by-Step Derivation Trace -->
+                <div style="margin-top: 1.5rem;">
+                    <span class="card-title" style="display: block; margin-bottom: 0.5rem;">Parsing Stack Step-by-Step Simulation Trace</span>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Step #</th>
+                                    <th>Stack</th>
+                                    <th>Input Buffer</th>
+                                    <th>Action / Rule Applied</th>
+                                </tr>
+                            </thead>
+                            <tbody id="parse-simulation-table-body">
+                                <tr>
+                                    <td colspan="4" class="muted text-center">Click 'Parse' above to simulate LL(1) derivation steps.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal: Theoretical Foundation & Guide -->
+    <div class="modal-overlay" id="theory-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2 class="modal-title">Automated Syntax & Semantic Processing Guide</h2>
+                <button type="button" class="icon-btn" id="btn-close-modal">✕</button>
+            </div>
+            <div class="modal-body">
+                <h3>1. Lexical Analysis (Scanning)</h3>
+                <p>The lexer scans the raw character stream and converts it into discrete tokens with line and column tracking using Regular Expressions and Finite Automata. Each token carries its type, lexeme, and source location.</p>
+
+                <h3>2. Syntax Analysis (Parsing) & AST</h3>
+                <p>Syntax analysis validates if the token sequence adheres to the Context-Free Grammar (CFG). Recursive-descent with predictive parsing generates an Abstract Syntax Tree (AST), stripping away syntactic noise (delimiters, parentheses) and retaining semantic hierarchy.</p>
+
+                <h3>3. FIRST and FOLLOW Sets</h3>
+                <ul>
+                    <li><code>FIRST(α)</code>: The set of terminals that begin strings derived from α. If α can derive ε, then ε ∈ FIRST(α).</li>
+                    <li><code>FOLLOW(A)</code>: The set of terminals that can appear immediately to the right of non-terminal A in some sentential form. For start symbol S, <code>$ ∈ FOLLOW(S)</code>.</li>
+                </ul>
+
+                <h3>4. LL(1) Grammar Conditions</h3>
+                <p>A grammar G is LL(1) if and only if whenever <code>A -> α | β</code> are two distinct productions:</p>
+                <ul>
+                    <li>FIRST(α) ∩ FIRST(β) = ∅ (No First/First conflict)</li>
+                    <li>If ε ∈ FIRST(α), then FIRST(β) ∩ FOLLOW(A) = ∅ (No First/Follow conflict)</li>
+                </ul>
+
+                <h3>5. Semantic Analysis & Symbol Tables</h3>
+                <p>Semantic analysis enforces static language invariants that cannot be expressed in context-free grammars:</p>
+                <ul>
+                    <li><strong>Hierarchical Scope Table:</strong> Tracks variables and functions across global, local, and nested block scopes.</li>
+                    <li><strong>Type Checking:</strong> Validates assignment compatibility, operator legality (e.g. arithmetic on numbers only), and function parameter arity/types.</li>
+                </ul>
+
+                <h3>6. Intermediate Code & Virtual Machine</h3>
+                <p>The compiler translates AST nodes into Three-Address Code (TAC), represented as Quadruples <code>(Op, Arg1, Arg2, Result)</code>, partitions TAC into Basic Blocks, and executes it in an interactive step-by-step virtual machine.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
